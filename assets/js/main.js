@@ -1,3 +1,7 @@
+// Konfiguration importieren
+import { SITE } from "./config.js";
+
+// ===== Partials laden =====
 async function loadPartial(selector, url) {
   const el = document.querySelector(selector);
   if (!el) return;
@@ -8,10 +12,31 @@ async function loadPartial(selector, url) {
     el.innerHTML = await res.text();
   } catch (err) {
     console.error(err);
-    el.innerHTML = `<!-- Konnte ${url} nicht laden -->`;
+    el.innerHTML = `<!-- Fehler beim Laden von ${url} -->`;
   }
 }
 
+// ===== Zentrale Konfiguration anwenden =====
+function applyConfig() {
+  // Mail-Adresse überall einsetzen
+  document.querySelectorAll("[data-email]").forEach((el) => {
+    el.textContent = SITE.email;
+  });
+
+  document.querySelectorAll("[data-email-href]").forEach((el) => {
+    el.setAttribute("href", `mailto:${SITE.email}`);
+    if (!el.textContent.trim()) {
+      el.textContent = SITE.email;
+    }
+  });
+
+  // eBay-Link optional zentral setzen
+  document.querySelectorAll("[data-ebay-href]").forEach((el) => {
+    el.setAttribute("href", SITE.ebayUrl);
+  });
+}
+
+// ===== Menü & Layout =====
 function wireMenuAndLayout() {
   const btn = document.getElementById("menuBtn");
   const sidebar = document.getElementById("sidebar");
@@ -48,28 +73,32 @@ function wireMenuAndLayout() {
   if (btn && sidebar && overlay) {
     btn.addEventListener("click", toggleMenu);
     overlay.addEventListener("click", closeMenu);
+
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeMenu();
     });
   }
 
-  // Active Link markieren
+  // Aktive Seite im Menü markieren
   const path = (location.pathname.split("/").pop() || "index.html").toLowerCase();
   document.querySelectorAll("[data-nav]").forEach((a) => {
     const href = (a.getAttribute("href") || "").toLowerCase();
     if (href === path) a.classList.add("active");
   });
 
-  // Header-Höhe nach Bildladen korrekt setzen
+  // Header-Höhe setzen
   updateHeaderHeight();
   window.addEventListener("resize", updateHeaderHeight);
   window.addEventListener("load", updateHeaderHeight);
 }
 
+// ===== Initialisierung =====
 async function init() {
   await loadPartial("#siteHeader", "partials/header.html");
   await loadPartial("#siteSidebar", "partials/sidebar.html");
   await loadPartial("#siteFooter", "partials/footer.html");
+
+  applyConfig();
   wireMenuAndLayout();
 }
 
